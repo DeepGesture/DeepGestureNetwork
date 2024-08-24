@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("../")
 
 import Library.Utility as utility
@@ -10,6 +11,7 @@ import torch
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
+
 
 class Model(torch.nn.Module):
     def __init__(self, gating_indices, gating_input, gating_hidden, gating_output, main_indices, main_input, main_hidden, main_output, dropout, input_norm, output_norm):
@@ -36,7 +38,7 @@ class Model(torch.nn.Module):
     def forward(self, x):
         x = utility.Normalize(x, self.Xnorm)
 
-        #Gating
+        # Gating
         g = x[:, self.gating_indices]
 
         g = F.dropout(g, self.dropout, training=self.training)
@@ -52,7 +54,7 @@ class Model(torch.nn.Module):
 
         w = F.softmax(g, dim=1)
 
-        #Main
+        # Main
         m = x[:, self.main_indices]
 
         m = F.dropout(m, self.dropout, training=self.training)
@@ -60,7 +62,7 @@ class Model(torch.nn.Module):
         m = F.elu(m)
 
         m = F.dropout(m, self.dropout, training=self.training)
-        m = self.E2(m , w)
+        m = self.E2(m, w)
         m = F.elu(m)
 
         m = F.dropout(m, self.dropout, training=self.training)
@@ -68,7 +70,8 @@ class Model(torch.nn.Module):
 
         return utility.Renormalize(m, self.Ynorm), w
 
-#Output-Blended MoE Layer
+
+# Output-Blended MoE Layer
 class ExpertLinear(torch.nn.Module):
     def __init__(self, experts, input_dim, output_dim):
         super(ExpertLinear, self).__init__()
@@ -82,7 +85,7 @@ class ExpertLinear(torch.nn.Module):
     def forward(self, x, weights):
         y = torch.zeros((x.shape[0], self.output_dim), device=x.device, requires_grad=True)
         for i in range(self.experts):
-            y = y + weights[:,i].unsqueeze(1) * (x.matmul(self.W[i,:,:]) + self.b[i,:,:])
+            y = y + weights[:, i].unsqueeze(1) * (x.matmul(self.W[i, :, :]) + self.b[i, :, :])
         return y
 
     def weights(self, shape):
@@ -92,6 +95,7 @@ class ExpertLinear(torch.nn.Module):
 
     def bias(self, shape):
         return Parameter(torch.zeros(shape, dtype=torch.float), requires_grad=True)
+
 
 if __name__ == '__main__':
 
@@ -129,13 +133,13 @@ if __name__ == '__main__':
     output_dim = Yshape[1]
 
     network = utility.ToDevice(Model(
-        gating_indices=gating_indices, 
-        gating_input=len(gating_indices), 
-        gating_hidden=gating_hidden, 
-        gating_output=experts, 
-        main_indices=main_indices, 
-        main_input=len(main_indices), 
-        main_hidden=main_hidden, 
+        gating_indices=gating_indices,
+        gating_input=len(gating_indices),
+        gating_hidden=gating_hidden,
+        gating_output=experts,
+        main_indices=main_indices,
+        main_input=len(main_indices),
+        main_hidden=main_hidden,
         main_output=output_dim,
         dropout=dropout,
         input_norm=Xnorm,
@@ -153,7 +157,7 @@ if __name__ == '__main__':
         error = 0.0
         for i in range(0, sample_count, batch_size):
             print('Progress', round(100 * i / sample_count, 2), "%", end="\r")
-            train_indices = I[i:i+batch_size]
+            train_indices = I[i:i + batch_size]
 
             xBatch = utility.ReadBatchFromFile(InputFile, train_indices, input_dim)
             yBatch = utility.ReadBatchFromFile(OutputFile, train_indices, output_dim)
@@ -169,12 +173,12 @@ if __name__ == '__main__':
             scheduler.batch_step()
 
             error += loss.item()
-    
+
         utility.SaveONNX(
-            path=save+'/'+str(epoch+1)+'.onnx',
+            path=save + '/' + str(epoch + 1) + '.onnx',
             model=network,
             input_size=input_dim,
             input_names=['X'],
             output_names=['Y', 'W']
         )
-        print('Epoch', epoch+1, error/(sample_count/batch_size))
+        print('Epoch', epoch + 1, error / (sample_count / batch_size))

@@ -11,6 +11,7 @@ from collections import OrderedDict
 
 VERBOSE_STEP = 1000
 
+
 class LN(nn.Module):
     def __init__(self, dim, epsilon=1e-5):
         super().__init__()
@@ -26,6 +27,7 @@ class LN(nn.Module):
         y = (x - mean) / std
         y = y * self.alpha + self.beta
         return y
+
 
 class LN_v2(nn.Module):
     def __init__(self, dim, epsilon=1e-5):
@@ -43,6 +45,7 @@ class LN_v2(nn.Module):
         y = y * self.alpha + self.beta
         return y
 
+
 class LN_v3(nn.Module):
     def __init__(self, dim, epsilon=1e-5):
         super().__init__()
@@ -54,6 +57,7 @@ class LN_v3(nn.Module):
         std = (var + self.epsilon).sqrt()
         y = (x - mean) / std
         return y
+
 
 class LN_v4(nn.Module):
     def __init__(self, dim, epsilon=1e-5):
@@ -71,9 +75,11 @@ class LN_v4(nn.Module):
         y = y * self.alpha + self.beta
         return y
 
+
 class BinaryLoader():
     def __init__(self, file, maxStack=10):
         self.File = file
+
 
 class PlottingWindow():
     def __init__(self, title, ax=None, min=None, max=None, cumulativeHorizon=100, drawInterval=100):
@@ -84,22 +90,22 @@ class PlottingWindow():
         self.DrawInterval = drawInterval
         self.YMin = min
         self.YMax = max
-        self.YRange = [sys.float_info.max if min==None else min, sys.float_info.min if max==None else max]
-        self.Functions = {} #string->[History, Horizon]
+        self.YRange = [sys.float_info.max if min == None else min, sys.float_info.min if max == None else max]
+        self.Functions = {}  # string->[History, Horizon]
         self.Counter = 0
 
-    def Add(self, *args): #arg->(value, label)
+    def Add(self, *args):  # arg->(value, label)
         for arg in args:
             value = arg[0]
             label = arg[1]
             if label not in self.Functions:
-                self.Functions[label] = ([],[])
+                self.Functions[label] = ([], [])
             function = self.Functions[label]
             function[0].append(value)
             function[1].append(sum(function[0][-self.CumulativeHorizon:]) / len(function[0][-self.CumulativeHorizon:]))
 
-            self.YRange[0] = min(self.YRange[0], value) if self.YMin==None else self.YRange[0]
-            self.YRange[1] = max(self.YRange[1], value) if self.YMax==None else self.YRange[1]
+            self.YRange[0] = min(self.YRange[0], value) if self.YMin == None else self.YRange[0]
+            self.YRange[1] = max(self.YRange[1], value) if self.YMax == None else self.YRange[1]
 
         self.Counter += 1
         if self.Counter >= self.DrawInterval:
@@ -111,25 +117,26 @@ class PlottingWindow():
         self.ax.set_title(self.Title)
         for label in self.Functions.keys():
             function = self.Functions[label]
-            step = max(int(len(function[0])/self.DrawInterval), 1)
+            step = max(int(len(function[0]) / self.DrawInterval), 1)
             self.ax.plot(function[0][::step], label=label + " (" + str(round(self.CumulativeValue(label), 3)) + ")")
-            self.ax.plot(function[1][::step], c=(0,0,0))
+            self.ax.plot(function[1][::step], c=(0, 0, 0))
         self.ax.set_ylim(self.YRange[0], self.YRange[1])
         self.ax.legend()
         plt.gcf().canvas.draw_idle()
         plt.gcf().canvas.start_event_loop(1e-5)
 
     def Value(self, label=None):
-        if label==None:
+        if label == None:
             return sum(x[0][-1] for x in self.Functions.values())
         else:
             return self.Functions[label][0][-1]
 
     def CumulativeValue(self, label=None):
-        if label==None:
+        if label == None:
             return sum(x[1][-1] for x in self.Functions.values())
         else:
             return self.Functions[label][1][-1]
+
 
 def SetSeed(seed):
     random.seed(seed)
@@ -138,11 +145,13 @@ def SetSeed(seed):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
+
 def Timestamp():
     return time.time()
 
+
 def ElapsedTime(timestamp, output=False, formatted=False):
-    elapsed = 1000 * (time.time() - timestamp) #milliseconds
+    elapsed = 1000 * (time.time() - timestamp)  # milliseconds
     if output:
         print("{0:.3f}".format(elapsed), 'ms')
     if formatted:
@@ -150,14 +159,16 @@ def ElapsedTime(timestamp, output=False, formatted=False):
     else:
         return elapsed
 
+
 def GetFileID(file):
-    return os.path.basename(os.path.dirname(file))+"_"+os.path.basename(file)
+    return os.path.basename(os.path.dirname(file)) + "_" + os.path.basename(file)
+
 
 def CollectPointers(file, max=None):
     pointers = []
     with open(file) as f:
         pivot = 0
-        while(f.readline()):
+        while (f.readline()):
             pointers.append(pivot)
             pivot = f.tell()
             if len(pointers) % VERBOSE_STEP == 0:
@@ -168,6 +179,7 @@ def CollectPointers(file, max=None):
     # print("Loaded " + file)
     return np.array(pointers)
 
+
 def ReadChunk(file, pointers):
     data = []
     with open(file) as f:
@@ -175,6 +187,7 @@ def ReadChunk(file, pointers):
             f.seek(i)
             data.append(np.float32(np.fromstring(f.readline(), sep=' ')))
     return np.concatenate(data).reshape(len(pointers), -1)
+
 
 def SaveTxtFromList(X, name):
     count = 0
@@ -188,25 +201,27 @@ def SaveTxtFromList(X, name):
                 f.write(item[:-1])
             else:
                 f.write(item[:-1] + '\n')
-            
+
 
 def SaveTxtFromNumpy(X, name):
     np.savetxt(name + ".txt", X)
 
+
 def SaveBinary(X, name):
     X.tofile(name + ".bin")
 
-#binaryFile = .bin data matrix of shape samples x features
-#sampleCount = number of samples in the file
-#featureCount = number of features per sample
+
+# binaryFile = .bin data matrix of shape samples x features
+# sampleCount = number of samples in the file
+# featureCount = number of features per sample
 def ReadBinary(binaryFile, sampleCount, featureCount):
-    bytesPerLine = featureCount*4
+    bytesPerLine = featureCount * 4
     data = []
     with open(binaryFile, "rb") as f:
         for i in np.arange(sampleCount):
-            if i % max(int(sampleCount / VERBOSE_STEP),1) == 0:
+            if i % max(int(sampleCount / VERBOSE_STEP), 1) == 0:
                 print('Reading binary ' + binaryFile + '...', round(100 * i / sampleCount, 2), "%", end="\r")
-            f.seek(i*bytesPerLine)
+            f.seek(i * bytesPerLine)
             bytes = f.read(bytesPerLine)
             data.append(np.float32(array.array('f', bytes)))
     print('Reading binary ' + binaryFile + '...', 100, "%", end="\r")
@@ -216,6 +231,7 @@ def ReadBinary(binaryFile, sampleCount, featureCount):
     # samples = 100
     # features = 2904
     # batch = ReadAll("Input.bin", samples, features)
+
 
 # #binaryFile = .bin data matrix of shape samples x features
 # #sampleIndices = list of sample indices from 0
@@ -235,15 +251,15 @@ def ReadBinary(binaryFile, sampleCount, featureCount):
 #     # features = 2904
 #     # batch = ReadBatch("Input.bin", np.random.randint(samples, size=batchSize), features)
 
-#binaryFile = .bin data matrix of shape samples x features
-#sampleIndices = list of sample indices from 0
-#featureCount = number of features per sample
+# binaryFile = .bin data matrix of shape samples x features
+# sampleIndices = list of sample indices from 0
+# featureCount = number of features per sample
 def ReadBatchFromFile(binaryFile, sampleIndices, featureCount):
-    bytesPerLine = featureCount*4
+    bytesPerLine = featureCount * 4
     data = np.empty([len(sampleIndices), featureCount], dtype=np.float32)
     with open(binaryFile, "rb") as f:
         for i in range(len(sampleIndices)):
-            f.seek(sampleIndices[i]*bytesPerLine)
+            f.seek(sampleIndices[i] * bytesPerLine)
             bytes = f.read(bytesPerLine)
             data[i] = np.float32(array.array('f', bytes))
     return ToDevice(torch.from_numpy(data))
@@ -253,57 +269,65 @@ def ReadBatchFromFile(binaryFile, sampleIndices, featureCount):
     # features = 2904
     # batch = ReadBatch("Input.bin", np.random.randint(samples, size=batchSize), features)
 
-#matrix = numpy data matrix of shape samples x features
-#indices = list of sample indices from 0
+
+# matrix = numpy data matrix of shape samples x features
+# indices = list of sample indices from 0
 def ReadBatchFromMatrix(matrix, indices):
     return ToDevice(torch.from_numpy(matrix[indices]))
+
 
 def SaveONNX(path, model, input_size, input_names, output_names):
     FromDevice(model)
     torch.onnx.export(
-        model,                            # model being run
-        torch.randn(1, input_size),          # model input (or a tuple for multiple inputs)
-        path,            # where to save the model (can be a file or file-like object)
-        training=False,
-        export_params=True,                 # store the trained parameter weights inside the model file
-        opset_version=9,                    # the ONNX version to export the model to
-        do_constant_folding=False,          # whether to execute constant folding for optimization
-        input_names = input_names,                # the model's input names
-        output_names = output_names                # the model's output names
+        model,  # model being run
+        torch.randn(1, input_size),  # model input (or a tuple for multiple inputs)
+        path,  # where to save the model (can be a file or file-like object)
+        training=torch.onnx.TrainingMode.EVAL,
+        export_params=True,  # store the trained parameter weights inside the model file
+        opset_version=9,  # the ONNX version to export the model to
+        do_constant_folding=False,  # whether to execute constant folding for optimization
+        input_names=input_names,  # the model's input names
+        output_names=output_names  # the model's output names
     )
     ToDevice(model)
-    
+
+
 def LoadNormalization(path, dim, debug=False):
     print("Loading " + path)
     norm = np.fromfile(path, dtype=np.float32)
     return norm.reshape(2, dim)
 
+
 def MakeDirectory(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
+
 def ToDevice(x):
     return x.cuda() if torch.cuda.is_available() else x
+
 
 def FromDevice(x):
     return x.cpu() if torch.cuda.is_available() else x
 
+
 def ToNumpy(X):
     return X.data.cpu().numpy()
 
-#batch is number
-#t is 3D translation vector of shape [batch,values]
-#r is 3D Euler angle vector of shape [batch,values]
-#device is cpu or gpu
+
+# batch is number
+# t is 3D translation vector of shape [batch,values]
+# r is 3D Euler angle vector of shape [batch,values]
+# device is cpu or gpu
 def CreateMatrix(batch, t, r, device):
     sin = torch.sin(r)
     cos = torch.cos(r)
-    sinx = sin[:,0]
-    cosx = cos[:,0]
-    siny = sin[:,1]
-    cosy = cos[:,1]
-    sinz = sin[:,2]
-    cosz = cos[:,2]
+    sinx = sin[:, 0]
+    cosx = cos[:, 0]
+    siny = sin[:, 1]
+    cosy = cos[:, 1]
+    sinz = sin[:, 2]
+    cosz = cos[:, 2]
 
     r00 = cosy * cosz
     r01 = sinx * siny * cosz - cosx * sinz
@@ -319,11 +343,12 @@ def CreateMatrix(batch, t, r, device):
     ry = torch.stack((r01, r11, r21, torch.zeros((batch), dtype=torch.float32, device=device)), 1)
     rz = torch.stack((r02, r12, r22, torch.zeros((batch), dtype=torch.float32, device=device)), 1)
 
-    t = torch.stack((t[:,0], t[:,1], t[:,2], torch.ones((batch), dtype=torch.float32, device=device)), 1)
+    t = torch.stack((t[:, 0], t[:, 1], t[:, 2], torch.ones((batch), dtype=torch.float32, device=device)), 1)
 
     m = torch.stack((rx, ry, rz, t), 2)
-    
+
     return m
+
 
 def LoadAsListOfInts(path, debug=False):
     file = open(path, 'r')
@@ -336,13 +361,15 @@ def LoadAsListOfInts(path, debug=False):
         result.append(values)
     return result
 
+
 def PrintProgress(pivot, total, resolution=1000):
-    step = max(int(total / resolution),1)
+    step = max(int(total / resolution), 1)
     if pivot % step == 0:
         print('Progress', round(100 * pivot / total, 2), "%", end="\r")
 
+
 def LoadSequences(path, debug=False, lineCount=None):
-    print("Loading "+ path)
+    print("Loading " + path)
     data = []
     with open(path) as file:
         pivot = 0
@@ -352,13 +379,14 @@ def LoadSequences(path, debug=False, lineCount=None):
                 PrintProgress(pivot, lineCount)
             entry = line.rstrip().split(' ')
             data.append(entry[0])
-            if pivot==lineCount:
+            if pivot == lineCount:
                 break
     data = np.array(data, dtype=np.int64)
     return data
 
+
 def LoadTxtRaw(path, debug=False, lineCount=None):
-    print("Loading "+ path)
+    print("Loading " + path)
     data = []
     with open(path) as file:
         pivot = 0
@@ -370,23 +398,28 @@ def LoadTxtRaw(path, debug=False, lineCount=None):
             data.append(entry)
     return data
 
+
 def Transpose2DList(values):
     return [list(i) for i in zip(*values)]
+
 
 def LoadTxtAsInt(path, debug=False):
     print("Loading " + path)
     txt = np.loadtxt(path, dtype=np.int64)
     return txt
 
+
 def LoadTxtAsFloat(path, debug=False):
     print("Loading " + path)
     txt = np.loadtxt(path, dtype=np.float32)
     return txt
 
+
 def LoadTxt(path, debug=False):
     print("Loading " + path)
     txt = np.float32(np.loadtxt(path))
     return txt
+
 
 # def RawNormalize(X, mean, std):
 #     return (X - mean) / std
@@ -399,26 +432,31 @@ def Normalize(X, N):
     std = N[1]
     return (X - mean) / std
 
+
 def Renormalize(X, N):
     mean = N[0]
     std = N[1]
     return (X * std) + mean
+
 
 def FreezeWeights(model, names, value):
     for name, param in model.named_parameters():
         if name in names:
             param.requires_grad = not value
 
+
 def GetStateDict(model, names):
     dict = OrderedDict()
     for param_tensor in model.state_dict():
-        if param_tensor in names :
+        if param_tensor in names:
             dict[param_tensor] = model.state_dict()[param_tensor]
     return dict
+
 
 def PrintStateDict(model):
     for param_tensor in model.state_dict():
         print(param_tensor, "\t", model.state_dict()[param_tensor].size())
+
 
 def PrintParameters(model, learnable=True):
     if learnable:
@@ -433,6 +471,7 @@ def PrintParameters(model, learnable=True):
             if not param.requires_grad:
                 print(name)
 
+
 def GetParameters(model, learnable=True):
     params = []
     for name, param in model.named_parameters():
@@ -444,19 +483,22 @@ def GetParameters(model, learnable=True):
                 params.append(param)
     return params
 
+
 def CountParameters(model, learnable=True):
     if learnable:
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     else:
         return sum(p.numel() for p in model.parameters() if not p.requires_grad)
 
+
 def atan2(y, x):
     # tpi = self.tpi
-    tpi = 2*np.pi
-    ans = torch.atan(y/x)
-    ans = torch.where( (x<0) * (y>=0), ans+0.5*tpi, ans)
-    ans = torch.where( (x<0) * (y<0), ans-0.5*tpi, ans)
+    tpi = 2 * np.pi
+    ans = torch.atan(y / x)
+    ans = torch.where((x < 0) * (y >= 0), ans + 0.5 * tpi, ans)
+    ans = torch.where((x < 0) * (y < 0), ans - 0.5 * tpi, ans)
     return ans
+
 
 def Gaussian(N, std, sym=True):
     if N < 1:
@@ -473,20 +515,23 @@ def Gaussian(N, std, sym=True):
         w = w[:-1]
     return w
 
+
 def Rescale(value, valueMin, valueMax, resultMin, resultMax):
-    if valueMax-valueMin != 0.0:
-        return (value-valueMin)/(valueMax-valueMin)*(resultMax-resultMin) + resultMin
+    if valueMax - valueMin != 0.0:
+        return (value - valueMin) / (valueMax - valueMin) * (resultMax - resultMin) + resultMin
     else:
         return value
 
+
 def RainbowColor(index, count):
-    frequency = 5.0/count
+    frequency = 5.0 / count
     return (
-        Rescale(np.sin(frequency*index + 0.0) * (127.0) + 128.0, 0.0, 255.0, 0.0, 1.0),
-        Rescale(np.sin(frequency*index + 2.0) * (127.0) + 128.0, 0.0, 255.0, 0.0, 1.0),
-        Rescale(np.sin(frequency*index + 4.0) * (127.0) + 128.0, 0.0, 255.0, 0.0, 1.0),
+        Rescale(np.sin(frequency * index + 0.0) * (127.0) + 128.0, 0.0, 255.0, 0.0, 1.0),
+        Rescale(np.sin(frequency * index + 2.0) * (127.0) + 128.0, 0.0, 255.0, 0.0, 1.0),
+        Rescale(np.sin(frequency * index + 4.0) * (127.0) + 128.0, 0.0, 255.0, 0.0, 1.0),
         1.0
     )
+
 
 def GetLabelIndicesExclude(file, name):
     indices = []
@@ -497,6 +542,7 @@ def GetLabelIndicesExclude(file, name):
                 indices.append(i)
             i += 1
     return None if len(indices) == 0 else torch.tensor(indices)
+
 
 def GetLabelIndicesContain(file, name):
     indices = []
