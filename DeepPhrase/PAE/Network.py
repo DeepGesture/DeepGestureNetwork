@@ -22,14 +22,14 @@ if __name__ == '__main__':
     # Start Parameter Section
     window = 2.0  # time duration of the time window
     fps = 60  # fps of the motion capture data
-    joints = 26  # joints of the character skeleton
+    joints = 75 # 26  # joints of the character skeleton
 
     frames = int(window * fps) + 1
     input_channels = 3 * joints  # number of channels along time in the input data (here 3*J as XYZ-component of each joint)
     phase_channels = 5  # desired number of latent phase channels (usually between 2-10)
 
     epochs = 10
-    batch_size = 32
+    batch_size = 3200
     learning_rate = 1e-4
     weight_decay = 1e-4
     restart_period = 10
@@ -111,6 +111,7 @@ if __name__ == '__main__':
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    torch.mps.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
     # Initialize drawing
@@ -222,6 +223,7 @@ if __name__ == '__main__':
 
                 plt.gcf().canvas.draw_idle()
             plt.gcf().canvas.start_event_loop(1e-5)
+
             # End Visualization Section
 
         torch.save(network, Save + "/" + str(epoch + 1) + "_" + str(phase_channels) + "Channels" + ".pt")
@@ -249,3 +251,4 @@ if __name__ == '__main__':
                         file.write(line)
                     else:
                         file.write(line + '\n')
+
