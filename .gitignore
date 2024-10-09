@@ -1,1 +1,12 @@
 .DS_Store
+.idea
+.ipynb_checkpoints
+__pycache__
+*.onnx
+*.bin
+
+DeepPhase/PAE/Training/*
+DeepPhase/PAE/Dataset/*
+
+DeepPhase/GNN/Data/*
+DeepPhase/GNN/Training/*
