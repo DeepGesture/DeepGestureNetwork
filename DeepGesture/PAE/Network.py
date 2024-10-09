@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # Start Parameter Section
     window = 2.0  # time duration of the time window
     fps = 60  # fps of the motion capture data
-    joints = 24  # joints of the character skeleton
+    joints = 75  # joints of the character skeleton
 
     frames = int(window * fps) + 1
     input_channels = 3 * joints  # number of channels along time in the input data (here 3*J as XYZ-component of each joint)
@@ -83,8 +83,8 @@ if __name__ == '__main__':
     gather_window = np.arange(frames) - gather_padding
 
     # Pre-load Data Matrix
-    # Data = utility.ReadBinary(Data, sample_count, feature_dim)
-    Data = utility.ReadDataText(Data, sample_count, feature_dim)
+    Data = utility.ReadBinary(Data, sample_count, feature_dim)
+    # Data = utility.ReadDataText(Data, sample_count, feature_dim)
 
     # Start Generate Data Sequences
     print("Generating Data Sequences")
