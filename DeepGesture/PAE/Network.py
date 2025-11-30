@@ -20,9 +20,9 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
 
     # Start Parameter Section
-    window = 2.0  # time duration of the time window
+    window = 2.0  # time duration of the time window - 1.0s (past) + 1.0s (feature)
     fps = 60  # fps of the motion capture data
-    joints = 75  # joints of the character skeleton
+    joints = 75 # 75  # joints of the character skeleton
 
     frames = int(window * fps) + 1
     input_channels = 3 * joints  # number of channels along time in the input data (here 3*J as XYZ-component of each joint)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     sample_count = Shape[0]
     feature_dim = Shape[1]
-    gather_padding = (int((frames - 1) / 2))
+    gather_padding = (int((frames - 1) / 2))  # frames = gather_padding (past) + 1 + gather_padding (future)
     gather_window = np.arange(frames) - gather_padding
 
     # Pre-load Data Matrix
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     rng = np.random.RandomState(seed)
     random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
+    # torch.cuda.manual_seed(seed)
     torch.mps.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
@@ -232,10 +232,6 @@ if __name__ == '__main__':
         torch.save(network, OutputDir + "/" + str(epoch + 1) + "_" + str(phase_channels) + "Channels" + ".pt")
 
         print('Epoch', epoch + 1, loss_history.CumulativeValue())
-        fig1.savefig(f'figure1.png')
-        fig2.savefig(f'figure2.png')
-        fig3.savefig(f'figure3.png')
-        fig4.savefig(f'figure4.png')
 
         # Save Phase Parameters
         print("Saving Parameters")
@@ -258,3 +254,8 @@ if __name__ == '__main__':
                         file.write(line)
                     else:
                         file.write(line + '\n')
+
+    fig1.savefig(f'figure1.png')
+    fig2.savefig(f'figure2.png')
+    fig3.savefig(f'figure3.png')
+    fig4.savefig(f'figure4.png')

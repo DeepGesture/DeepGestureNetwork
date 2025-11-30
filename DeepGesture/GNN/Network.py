@@ -100,8 +100,8 @@ class ExpertLinear(torch.nn.Module):
 if __name__ == '__main__':
 
     InputDir = "Input"
-    gating_indices = torch.tensor([(15014 + i) for i in range(208)])
-    main_indices = torch.tensor([(0 + i) for i in range(15014)])
+    gating_indices = torch.tensor([(1160 + i) for i in range(208)])
+    main_indices = torch.tensor([(0 + i) for i in range(1160)])
 
     OutputDir = "./Output"
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     utility.SetSeed(23456)
 
-    epochs = 10 # 150
+    epochs = 150
     batch_size = 3200
     dropout = 0.3
     gating_hidden = 64
@@ -178,6 +178,7 @@ if __name__ == '__main__':
 
         # network = utility.ToCPU(network)
         print("Saving ONNX: ", epoch)
+        # if epoch % 10 == 0:
         utility.SaveONNX(
             path=OutputDir + '/' + str(epoch + 1) + '.onnx',
             model=utility.ToCPU(network),
